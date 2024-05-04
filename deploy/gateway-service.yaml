@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+  namespace: image-intellisense
+spec:
+  selector:
+    app: gateway
+  type: LoadBalancer
+  ports:
+    - name: gateway-tcp
+      protocol: TCP
+      port: 9000
+      targetPort: gateway-tcp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: image-intellisense
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: gateway
+          image: image-intellisense/gateway-service
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "0.10"
+              memory: 256M
+            limits:
+              cpu: "0.40"
+              memory: 1024M
+          ports:
+            - name: gateway-tcp
+              containerPort: 9000
+          env:
+            - name: PGHOST
+              value: "postgres-db-service"
+            - name: REDIS_HOST
+              value: "redis-db-service"
+            - name: ML_SERVICE_HOST
+              value: "ml-service"
+            - name: ML_SERVICE_PORT
+              value: "8001"
+            - name: UPLOAD_SERVICE_HOST
+              value: "upload-service"
+            - name: UPLOAD_SERVICE_PORT
+              value: "5001"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9000
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 4
+            successThreshold: 1
+            initialDelaySeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9000
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 2
+            initialDelaySeconds: 15

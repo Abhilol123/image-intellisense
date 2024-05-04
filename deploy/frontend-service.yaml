@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: image-intellisense
+spec:
+  selector:
+    app: frontend
+  type: LoadBalancer
+  ports:
+    - name: frontend-tcp
+      protocol: TCP
+      port: 80
+      targetPort: frontend-tcp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: image-intellisense
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: frontend
+          image: image-intellisense/frontend-service
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "0.10"
+              memory: 256M
+            limits:
+              cpu: "0.40"
+              memory: 1024M
+          ports:
+            - name: frontend-tcp
+              containerPort: 80
+          livenessProbe:
+            exec:
+              command: ["ash", "-c", "nc -z localhost 80"]
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 4
+            successThreshold: 1
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command: ["ash", "-c", "nc -z localhost 80"]
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 2
+            initialDelaySeconds: 15

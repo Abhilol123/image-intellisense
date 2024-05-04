@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qdrant-pv
+  namespace: image-intellisense
+  labels:
+    name: qdrant
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /image-intellisense/qdrant-db/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qdrant-db-service
+  namespace: image-intellisense
+spec:
+  selector:
+    app: qdrant
+  ports:
+    - name: qdrant-tcp
+      protocol: TCP
+      port: 6333
+      targetPort: qdrant-tcp
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: qdrant
+  namespace: image-intellisense
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qdrant
+  volumeClaimTemplates:
+    - metadata:
+        name: qdrant-claim
+        namespace: image-intellisense
+      spec:
+        storageClassName: manual
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        selector:
+          matchLabels:
+            name: qdrant
+  serviceName: qdrant
+  template:
+    metadata:
+      labels:
+        app: qdrant
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: qdrant
+          image: image-intellisense/qdrant-db
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "0.10"
+              memory: 256M
+            limits:
+              cpu: "0.40"
+              memory: 1024M
+          volumeMounts:
+            - name: qdrant-claim
+              mountPath: "/qdrant-data"
+          ports:
+            - name: qdrant-tcp
+              containerPort: 6333
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 6333
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 4
+            successThreshold: 1
+            initialDelaySeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 6333
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 2
+            initialDelaySeconds: 15

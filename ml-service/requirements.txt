@@ -1,0 +1,9 @@
+Pillow
+fastapi
+fastapi-health
+uvicorn[standard]
+requests
+git+https://github.com/openai/CLIP.git@a9b1bf5920416aaeaec965c25dd9e8f98c864f16
+uuid
+qdrant_client==1.3.1
+redis==4.4.4

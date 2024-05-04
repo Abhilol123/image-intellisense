@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic Image Search</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js" async></script>
+    <script src="script.js" async></script>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload"
+                    type="button" role="tab" aria-controls="upload" aria-selected="true">Upload</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="search-tab" data-bs-toggle="tab" data-bs-target="#search" type="button"
+                    role="tab" aria-controls="search" aria-selected="false">Search</button>
+            </li>
+        </ul>
+        <div class="tab-content" id="myTabsContent">
+            <!-- Upload Tab -->
+            <div class="tab-pane fade show active" id="upload" role="tabpanel" aria-labelledby="upload-tab">
+                <h1>File Upload</h1>
+                <form id="upload-form">
+                    <div class="mb-3">
+                        <label for="fileInput" class="form-label">Choose a File:</label>
+                        <input type="file" class="form-control" id="fileInput" name="file" multiple>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </form>
+                <div id="upload-result" class="mt-3"></div>
+            </div>
+
+            <!-- Search Tab -->
+            <div class="tab-pane fade" id="search" role="tabpanel" aria-labelledby="search-tab">
+                <h1>Search for Image</h1>
+                <form id="search-form">
+                    <div class="mb-3">
+                        <label for="fileSearchInput" class="form-label">Enter Prompt:</label>
+                        <input type="text" class="form-control" id="fileSearchInput">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+                <div id="search-result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

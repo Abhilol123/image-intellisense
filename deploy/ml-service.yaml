@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-service
+  namespace: image-intellisense
+spec:
+  selector:
+    app: ml
+  ports:
+    - name: ml-tcp
+      protocol: TCP
+      port: 8001
+      targetPort: ml-tcp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml
+  namespace: image-intellisense
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ml
+  template:
+    metadata:
+      labels:
+        app: ml
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: ml
+          image: image-intellisense/ml-service
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "1.0"
+              memory: 1024M
+            limits:
+              cpu: "2.0"
+              memory: 4096M
+          ports:
+            - name: ml-tcp
+              containerPort: 8001
+          env:
+            - name: REDIS_HOST
+              value: "redis-db-service"
+            - name: QDRANT_DB_HOST
+              value: "qdrant-db-service"
+            - name: ENV_FILE
+              value: "prod.env"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 4
+            successThreshold: 1
+            initialDelaySeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 2
+            initialDelaySeconds: 15

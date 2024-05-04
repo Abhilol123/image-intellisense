@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+  namespace: image-intellisense
+  labels:
+    name: postgres
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /image-intellisense/postgres-db/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-db-service
+  namespace: image-intellisense
+spec:
+  selector:
+    app: postgres
+  ports:
+    - name: postgres-tcp
+      protocol: TCP
+      port: 5432
+      targetPort: postgres-tcp
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: image-intellisense
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-claim
+        namespace: image-intellisense
+      spec:
+        storageClassName: manual
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        selector:
+          matchLabels:
+            name: postgres
+  serviceName: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: postgres
+          image: image-intellisense/postgres-db
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "0.10"
+              memory: 256M
+            limits:
+              cpu: "0.40"
+              memory: 1024M
+          volumeMounts:
+            - name: postgres-claim
+              mountPath: "/var/lib/postgresql/data/pgdata"
+          ports:
+            - name: postgres-tcp
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              value: "password"
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: "trust"
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+            - name: PGPORT
+              value: "5432"
+            - name: POSTGRES_DB
+              value: "postgres_db"
+          livenessProbe:
+            exec:
+              command: ["ash", "-c", "nc -z localhost 5432"]
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 4
+            successThreshold: 1
+            initialDelaySeconds: 15
+          readinessProbe:
+            exec:
+              command:
+                ["ash", "-c", 'psql -h localhost -p 5432 -U postgres -c "\\q"']
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 2
+            initialDelaySeconds: 15

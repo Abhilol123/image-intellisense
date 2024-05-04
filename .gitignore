@@ -1,0 +1,6 @@
+.vscode
+image_storage/
+.idea
+
+dev_utils.sh
+dev.sh

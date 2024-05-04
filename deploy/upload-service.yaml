@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: upload-pv
+  namespace: image-intellisense
+  labels:
+    name: upload
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /image-intellisense/upload-service/
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: upload-claim
+  namespace: image-intellisense
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: upload-service
+  namespace: image-intellisense
+spec:
+  selector:
+    app: upload
+  ports:
+    - name: upload-tcp
+      protocol: TCP
+      port: 5001
+      targetPort: upload-tcp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: upload
+  namespace: image-intellisense
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: upload
+  template:
+    metadata:
+      labels:
+        app: upload
+    spec:
+      restartPolicy: Always
+      volumes:
+        - name: upload-claim
+          persistentVolumeClaim:
+            claimName: upload-claim
+      containers:
+        - name: upload
+          image: image-intellisense/upload-service
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "0.10"
+              memory: 256M
+            limits:
+              cpu: "0.40"
+              memory: 1024M
+          volumeMounts:
+            - name: upload-claim
+              mountPath: "/uploads"
+          ports:
+            - name: upload-tcp
+              containerPort: 5001
+          env:
+            - name: UPLOAD_PATH
+              value: "/uploads"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 4
+            successThreshold: 1
+            initialDelaySeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 2
+            initialDelaySeconds: 15

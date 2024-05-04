@@ -1,0 +1,20 @@
+server {
+    listen 80; 
+    server_name hostname.com localhost;
+
+    root /usr/share/nginx/html/;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    # Optional: Set cache control headers for better performance
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+        expires max;
+        add_header Cache-Control "public, max-age=1";
+    }
+
+    # Optional: Enable gzip compression for text-based files
+    gzip on;
+    gzip_types text/plain text/css application/javascript image/*;
+}
